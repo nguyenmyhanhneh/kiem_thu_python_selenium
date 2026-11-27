@@ -1,6 +1,15 @@
 # PYTHON SELENIUM AUTOMATION TEST DEMO
 
-Demo kiểm thử tự động chức năng đăng nhập của website SauceDemo bằng Python, Selenium WebDriver và pytest.
+Demo kiểm thử tự động website [SauceDemo](https://www.saucedemo.com/) bằng Python, Selenium WebDriver và pytest, tổ chức theo mô hình **Page Object Model (POM)**.
+
+Các chức năng được kiểm thử:
+
+- Đăng nhập (Login)
+- Danh sách sản phẩm (Inventory)
+- Giỏ hàng (Cart)
+- Thanh toán (Checkout)
+
+Tổng cộng **10 test case**.
 
 ## 1. Yêu cầu
 
@@ -10,29 +19,36 @@ Demo kiểm thử tự động chức năng đăng nhập của website SauceDem
 - Kết nối Internet
 - Visual Studio Code (khuyến nghị, không bắt buộc)
 
-Selenium 4 hiện hành có Selenium Manager hỗ trợ tìm/cấu hình driver tương thích. Thông thường không cần tải ChromeDriver thủ công.
+Selenium 4 có sẵn Selenium Manager để tự tìm ChromeDriver phù hợp, nên không cần tải ChromeDriver thủ công.
 
 ## 2. Cấu trúc thư mục
 
 ```text
-python_selenium_demo/
-├── pages/
+kiem_thu_python_selenium/
+├── pages/                      # Page Object: locator + thao tác của từng trang
 │   ├── __init__.py
-│   └── login_page.py
-├── tests/
-│   ├── conftest.py
-│   └── test_login.py
-├── screenshots/
+│   ├── login_page.py           # Trang đăng nhập
+│   ├── inventory_page.py       # Trang danh sách sản phẩm
+│   ├── cart_page.py            # Thêm/xóa sản phẩm, trang giỏ hàng
+│   └── checkout_page.py        # Trang thanh toán (bước nhập thông tin)
+├── tests/                      # Các test case pytest
+│   ├── conftest.py             # Fixture khởi tạo / đóng Chrome
+│   ├── test_login.py
+│   ├── test_inventory.py
+│   ├── test_cart.py
+│   └── test_checkout.py
+├── screenshots/                # Ảnh chụp minh họa kết quả chạy test
 ├── requirements.txt
 └── README.md
 ```
 
 ## 3. Cài đặt
 
-Mở thư mục dự án trong VS Code. Chọn Terminal → New Terminal, sau đó chạy:
+Tải mã nguồn về:
 
 ```bash
-python --version
+git clone https://github.com/nguyenmyhanhneh/kiem_thu_python_selenium.git
+cd kiem_thu_python_selenium
 ```
 
 Tạo môi trường ảo:
@@ -47,75 +63,102 @@ Kích hoạt trên Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
 ```
 
-Nếu PowerShell chặn script, có thể dùng Command Prompt:
+Nếu PowerShell chặn script, dùng Command Prompt:
 
 ```cmd
 .venv\Scripts\activate.bat
 ```
 
-Cài thư viện:
+Cài thư viện (`selenium>=4.20`, `pytest>=8.0`):
 
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Kiểm tra:
-
-```bash
-python -m pip show selenium
-python -m pip show pytest
-```
-
 ## 4. Website và dữ liệu thử nghiệm
 
 Website: https://www.saucedemo.com/
 
-Tài khoản demo công khai dùng trong bài thực hành:
-- Username: `standard_user`
-- Password: `secret_sauce`
+Tài khoản demo công khai được dùng trong test:
 
-Không dùng tài khoản cá nhân hoặc mật khẩu thật.
+| Username | Password | Mục đích |
+|---|---|---|
+| `standard_user` | `secret_sauce` | Tài khoản hợp lệ |
+| `locked_out_user` | `secret_sauce` | Tài khoản bị khóa |
+| `invalid_user` | `secret_sauce` | Tài khoản không tồn tại |
 
 ## 5. Chạy kiểm thử
 
-Đảm bảo đã kích hoạt môi trường `.venv`, đang đứng tại thư mục gốc dự án, rồi chạy:
+Kích hoạt `.venv`, đứng tại thư mục gốc dự án, rồi chạy toàn bộ test:
 
 ```bash
 python -m pytest -v
 ```
 
-Chrome sẽ tự mở và lần lượt chạy bốn test case. Sau khi mỗi test kết thúc, fixture sẽ đóng trình duyệt.
+Chạy riêng từng nhóm:
+
+```bash
+python -m pytest tests/test_login.py -v
+python -m pytest tests/test_inventory.py -v
+python -m pytest tests/test_cart.py -v
+python -m pytest tests/test_checkout.py -v
+```
+
+Mỗi test case mở một cửa sổ Chrome mới (chế độ ẩn danh, toàn màn hình). Khi test xong, trình duyệt chờ 3 giây rồi tự đóng (cấu hình trong `tests/conftest.py`).
 
 ## 6. Các test case
 
-| Mã | Trường hợp | Kết quả mong đợi |
-|---|---|---|
-| TC_LOGIN_01 | Đăng nhập đúng | URL chuyển đến `/inventory.html` |
-| TC_LOGIN_02 | Sai mật khẩu | Hiển thị thông báo sai username/password |
-| TC_LOGIN_03 | Bỏ trống cả hai trường | Hiển thị `Username is required` |
-| TC_LOGIN_04 | Kiểm tra sau đăng nhập | Trang có tiêu đề `Products` và URL inventory |
+### Đăng nhập (`tests/test_login.py`)
+
+| Mã | Hàm test | Trường hợp | Kết quả mong đợi |
+|---|---|---|---|
+| TC_LOGIN_01 | `test_login_with_valid_account` | Đăng nhập đúng | URL chuyển đến `/inventory.html` |
+| TC_LOGIN_02 | `test_login_with_wrong_password` | Sai mật khẩu | Thông báo `Username and password do not match` |
+| TC_LOGIN_03 | `test_login_with_empty_fields` | Bỏ trống cả hai trường | Thông báo `Username is required` |
+| TC_LOGIN_04 | `test_inventory_page_after_login` | Kiểm tra trang sau đăng nhập | Tiêu đề `Products` và URL `/inventory.html` |
+| TC_LOGIN_05 | `test_login_with_invalid_username` | Username không tồn tại | Thông báo `Username and password do not match` |
+| TC_LOGIN_06 | `test_login_with_locked_out_account` | Tài khoản bị khóa | Thông báo có chữ `locked out` |
+
+### Danh sách sản phẩm (`tests/test_inventory.py`)
+
+| Mã | Hàm test | Trường hợp | Kết quả mong đợi |
+|---|---|---|---|
+| TC_INV_01 | `test_inventory_products_displayed` | Hiển thị danh sách sản phẩm sau đăng nhập | Tiêu đề `Products`; có ít nhất 1 sản phẩm; tên và giá không rỗng |
+
+### Giỏ hàng (`tests/test_cart.py`)
+
+| Mã | Hàm test | Trường hợp | Kết quả mong đợi |
+|---|---|---|---|
+| TC_CART_01 | `test_add_product_to_cart` | Thêm "Sauce Labs Backpack" vào giỏ | Biểu tượng giỏ hiện `1`; giỏ có 1 sản phẩm đúng tên |
+| TC_CART_02 | `test_remove_product_from_cart` | Thêm rồi xóa sản phẩm trong giỏ | Giỏ trống; biểu tượng giỏ không còn số lượng |
+
+### Thanh toán (`tests/test_checkout.py`)
+
+| Mã | Hàm test | Trường hợp | Kết quả mong đợi |
+|---|---|---|---|
+| TC_CHECKOUT_01 | `test_checkout_with_empty_information` | Bấm Continue khi bỏ trống thông tin thanh toán | Thông báo `First Name is required` |
 
 ## 7. Đọc kết quả
 
 - `PASSED`: test case đạt, kết quả thực tế khớp kết quả mong đợi.
-- `FAILED`: test case không đạt; đọc phần traceback để xác định assertion hoặc thao tác lỗi.
-- Nếu test thất bại ở bước thực thi, chương trình cố gắng lưu ảnh tại thư mục `screenshots/`.
+- `FAILED`: test case không đạt; đọc phần traceback để biết assertion hoặc thao tác bị lỗi.
+- Kết quả `10 passed` nghĩa là cả 10 test case đều đạt trong lần chạy đó.
 
-Kết quả `4 passed` nghĩa là bốn test case đều đạt trong lần chạy đó. Chỉ ghi kết quả vào báo cáo sau khi thực sự chạy và lưu bằng chứng.
+Thư mục `screenshots/` chứa ảnh chụp màn hình minh họa một số test case. Code hiện tại **không tự động chụp ảnh** khi test thất bại.
 
 ## 8. Một số lỗi thường gặp
 
-**`python is not recognized`**: Python chưa được cài hoặc chưa thêm vào PATH. Cài Python và chọn tùy chọn Add Python to PATH, sau đó mở terminal mới.
+**`python is not recognized`**: Python chưa được cài hoặc chưa thêm vào PATH. Cài lại Python, chọn "Add Python to PATH", rồi mở terminal mới.
 
-**`No module named selenium` hoặc `No module named pytest`**: kiểm tra đã kích hoạt `.venv`, sau đó chạy `pip install -r requirements.txt`.
+**`No module named selenium` / `No module named pytest`**: kiểm tra đã kích hoạt `.venv`, sau đó chạy `pip install -r requirements.txt`.
 
-**Chrome không mở / lỗi driver**: cập nhật Chrome, kiểm tra Internet để Selenium Manager có thể lấy driver phù hợp; sau đó chạy lại.
+**`ModuleNotFoundError: No module named 'pages'`**: phải chạy lệnh `python -m pytest` tại thư mục gốc dự án (thư mục chứa `pages/` và `tests/`).
 
-**Không truy cập được website**: mở URL bằng Chrome thủ công, kiểm tra Internet, VPN hoặc proxy.
+**Chrome không mở / lỗi driver**: cập nhật Chrome, kiểm tra Internet để Selenium Manager tải driver phù hợp, rồi chạy lại.
 
-**PowerShell không cho kích hoạt môi trường ảo**: dùng Command Prompt và lệnh `.venv\\Scripts\\activate.bat`.
+**Không truy cập được website**: mở https://www.saucedemo.com/ bằng Chrome thủ công, kiểm tra Internet, VPN hoặc proxy.
 
 ## 9. Lưu ý
 
-Website demo có thể thay đổi giao diện hoặc nội dung thông báo theo thời gian. Nếu locator hoặc thông báo thay đổi, cần kiểm tra HTML thực tế và cập nhật `pages/login_page.py` hoặc test tương ứng. Không sửa expected result chỉ để làm test chuyển sang PASS khi chưa xác minh hành vi website.
+Website demo có thể thay đổi giao diện hoặc nội dung thông báo theo thời gian. Khi đó cần kiểm tra HTML thực tế và cập nhật locator trong thư mục `pages/` hoặc test tương ứng. Không sửa kết quả mong đợi chỉ để test chuyển sang PASS khi chưa xác minh hành vi thật của website.
